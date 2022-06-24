@@ -60,7 +60,7 @@ async def on_message(message):
 
 def getTemperatureRaspberrypi():
     cpu = "null"
-    # cpu = CPUTemperature()
+    cpu = CPUTemperature()
     if cpu != "null":
         cpu_class.temperature = str(round(cpu.temperature))
     return cpu_class.temperature
