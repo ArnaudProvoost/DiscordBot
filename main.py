@@ -1,6 +1,6 @@
 import json
 import sys
-import urllib.request
+from http.client import HTTPConnection
 import discord
 import json
 from gpiozero import CPUTemperature
@@ -10,7 +10,8 @@ data = json.load(f)
 
 bot = discord.Client()
 
-website_link_local = "http://192.168.0.152:8080/"
+website_link_local = "192.168.0.152"
+website_link_local_port = 8080
 website_link_outside = "arnaud.sinners.be"
 
 commands = ["!temperatuur", "!stop", "!checkwebsite", "!info"]
@@ -44,14 +45,14 @@ async def on_message(message):
         sys.exit()
 
     if "!checkwebsite" in message_content.lower():
-        returnWaarde, responsecode = getCheckwebsiteOnline()
+        returnWaarde, errormessage = getCheckwebsiteOnline()
+        website_link_answer = "http://"+website_link_local+":"+str(website_link_local_port)+"/"
         if returnWaarde == "true":
             await message.reply(":white_check_mark: De website staat goed online. \n Je kan deze terugvinden "
-                                       "op deze lokale link " + website_link_local)
+                                       "op deze lokale link " + website_link_answer)
         else:
             await message.reply(":negative_squared_cross_mark: Pas op de website is down. \n Kijk dit na op "
-                                       "deze lokale link " + website_link_local + ". \n De errorcode is " + str(
-                responsecode))
+                                       "deze lokale link " + website_link_answer + "."+ "\n Met deze errormessage: "+errormessage)
 
     if "!info" in message_content.lower():
         await message.reply(getInformationBot())
@@ -66,11 +67,15 @@ def getTemperatureRaspberrypi():
 
 
 def getCheckwebsiteOnline():
-    response_code = urllib.request.urlopen(website_link_local).getcode()
-    if response_code == 200:
-        return "true", response_code
-    else:
-        return "false", response_code
+    connection = HTTPConnection(website_link_local, port=website_link_local_port, timeout=10)
+    try:
+        connection.request("HEAD", "/")
+        connection.close()
+        return "true","none"
+    except Exception as e:
+        error = e
+        return "false", str(error)
+
 
 
 def getInformationBot():
